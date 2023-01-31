@@ -20,7 +20,7 @@ fn bash(mut command: &str) {
         command = "rm -f";
     }
 
-    let output = Command::new("sh")
+    let output = Command::new("bash")
         .arg("-c")
         .arg(command.trim())
         .output()
@@ -38,7 +38,7 @@ fn main() {
     } else if os == "windows" {
         println!("Running on Windows");
     } else {
-        println!("Running on an unknown operating system");
+        println!("Running on Mac OS");
     }
 
     loop {
@@ -58,7 +58,16 @@ fn main() {
         if command == "exit" {
             break; // Exit the program
         } else if command == "ver" {
-            println!("{}", info);
+            if os != "windows" && os != "linux" {
+                let output = Command::new("sw_vers")
+                    .arg("-productVersion")
+                    .output()
+                    .expect("Failed to run");
+
+                println!("{}", String::from_utf8_lossy(&output.stdout));
+            } else {
+                println!("{}", info);
+            }
         }
 
         if command.starts_with("cd ") {
