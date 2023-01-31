@@ -1,5 +1,6 @@
 use std::env;
 use std::io::{self, Write};
+use std::path::Path;
 use std::process::Command;
 
 fn exec_windows(command: &str) {
@@ -25,10 +26,18 @@ fn exec_linux(command: &str) {
 fn main() {
     let os = env::consts::OS;
 
+    if os == "linux" {
+        println!("Running on Linux");
+    } else if os == "windows" {
+        println!("Running on Windows");
+    } else {
+        println!("Running on an unknown operating system");
+    }
+
     loop {
         let mut command = String::new();
 
-        print!("$ ");
+        print!("{}> ", env::current_dir().unwrap().display());
 
         let _ = io::stdout().flush();
         io::stdin()
@@ -59,13 +68,11 @@ fn main() {
             editor.wait().unwrap();
         } else {
             if os == "linux" {
-                println!("Running on Linux");
                 exec_linux(command);
             } else if os == "windows" {
-                println!("Running on Windows");
                 exec_windows(command);
             } else {
-                println!("Running on an unknown operating system");
+                exec_linux(command);
             }
         }
     }
