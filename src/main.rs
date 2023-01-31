@@ -1,6 +1,7 @@
-use std::env;
 use std::io::{self, Write};
+use std::path::Path;
 use std::process::Command;
+use std::{env, fs};
 
 fn cmd(command: &str) {
     let output = Command::new("cmd")
@@ -69,26 +70,33 @@ fn main() {
         } else if command.starts_with("edit ") {
             let path = &command[5..];
 
-            if os == "linux" {
-                linux_editor
-                    .arg(path)
-                    .spawn()
-                    .expect("Failed to open editor");
-            } else if os == "windows" {
-                windows_editor
-                    .arg(path)
-                    .spawn()
-                    .expect("Failed to open editor");
-            } else {
-                bash(command);
+            let lock_file = format!("{}.lock", path);
+
+            if Path::new(&lock_file).exists() {
+                println!("The file is already being edited by another process.");
+                continue;
             }
 
-            let mut editor = Command::new("notepad")
-                .arg(path)
-                .spawn()
-                .expect("Failed to open editor");
+            fs::File::create(&lock_file).expect("Failed to create lock file");
 
-            editor.wait().unwrap();
+            if os == "windows" {
+                println!("{}", path);
+                let mut editor = windows_editor
+                    .arg(&path)
+                    .spawn()
+                    .expect("Failed to open editor");
+
+                editor.wait().unwrap();
+            } else {
+                let mut editor = linux_editor
+                    .arg(&path)
+                    .spawn()
+                    .expect("Failed to open editor");
+
+                editor.wait().unwrap();
+            }
+
+            fs::remove_file(&lock_file).expect("Failed to remove lock file")
         } else {
             if os == "linux" {
                 bash(command);
