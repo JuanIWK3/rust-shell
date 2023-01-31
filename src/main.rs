@@ -30,8 +30,6 @@ fn bash(mut command: &str) {
 }
 
 fn main() {
-    let mut linux_editor = Command::new("nano");
-    let mut windows_editor = Command::new("notepad");
     let os = env::consts::OS;
     let info = os_info::get();
 
@@ -68,6 +66,8 @@ fn main() {
                 Err(e) => println!("Failed to set current dir: {}", e),
             }
         } else if command.starts_with("edit ") {
+            let mut linux_editor = Command::new("nano");
+            let mut windows_editor = Command::new("notepad");
             let path = &command[5..];
 
             let lock_file = format!("{}.lock", path);
@@ -82,14 +82,14 @@ fn main() {
             if os == "windows" {
                 println!("{}", path);
                 let mut editor = windows_editor
-                    .arg(&path)
+                    .arg(path)
                     .spawn()
                     .expect("Failed to open editor");
 
                 editor.wait().unwrap();
             } else {
                 let mut editor = linux_editor
-                    .arg(&path)
+                    .arg(path)
                     .spawn()
                     .expect("Failed to open editor");
 
