@@ -2,7 +2,29 @@ use std::env;
 use std::io::{self, Write};
 use std::process::Command;
 
+fn exec_windows(command: &str) {
+    let output = Command::new("cmd")
+        .arg("/C")
+        .arg(command.trim())
+        .output()
+        .expect("Failed to run!");
+
+    println!("{}", String::from_utf8_lossy(&output.stdout));
+}
+
+fn exec_linux(command: &str) {
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg(command.trim())
+        .output()
+        .expect("Failed to run!");
+
+    println!("{}", String::from_utf8_lossy(&output.stdout));
+}
+
 fn main() {
+    let os = env::consts::OS;
+
     loop {
         let mut command = String::new();
 
@@ -28,19 +50,23 @@ fn main() {
             env::set_current_dir(dir).expect("Failed to change dirs");
         } else if command.starts_with("edit ") {
             let path = &command[5..];
-            let mut nano = Command::new("nano")
+
+            let mut editor = Command::new("notepad")
                 .arg(path)
                 .spawn()
                 .expect("Failed to open nano editor");
-            nano.wait().unwrap();
-        } else {
-            let output = Command::new("sh")
-                .arg("-c")
-                .arg(command.trim())
-                .output()
-                .expect("Failed to run!");
 
-            println!("{}", String::from_utf8_lossy(&output.stdout));
+            editor.wait().unwrap();
+        } else {
+            if os == "linux" {
+                println!("Running on Linux");
+                exec_linux(command);
+            } else if os == "windows" {
+                println!("Running on Windows");
+                exec_windows(command);
+            } else {
+                println!("Running on an unknown operating system");
+            }
         }
     }
 }
