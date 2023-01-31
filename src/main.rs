@@ -1,9 +1,8 @@
 use std::env;
 use std::io::{self, Write};
-use std::path::Path;
 use std::process::Command;
 
-fn exec_windows(command: &str) {
+fn cmd(command: &str) {
     let output = Command::new("cmd")
         .arg("/C")
         .arg(command.trim())
@@ -13,7 +12,13 @@ fn exec_windows(command: &str) {
     println!("{}", String::from_utf8_lossy(&output.stdout));
 }
 
-fn exec_linux(command: &str) {
+fn bash(mut command: &str) {
+    if command == "rm -d" {
+        command = "rm -rf";
+    } else if command == "rm -a" {
+        command = "rm -f";
+    }
+
     let output = Command::new("sh")
         .arg("-c")
         .arg(command.trim())
@@ -24,7 +29,10 @@ fn exec_linux(command: &str) {
 }
 
 fn main() {
+    let mut linux_editor = Command::new("nano");
+    let mut windows_editor = Command::new("notepad");
     let os = env::consts::OS;
+    let info = os_info::get();
 
     if os == "linux" {
         println!("Running on Linux");
@@ -44,8 +52,6 @@ fn main() {
             .read_line(&mut command)
             .expect("failed to read line!");
 
-        let info = os_info::get();
-
         let command = command.trim();
 
         if command == "exit" {
@@ -56,23 +62,40 @@ fn main() {
 
         if command.starts_with("cd ") {
             let dir = &command[3..];
-            env::set_current_dir(dir).expect("Failed to change dirs");
+            match env::set_current_dir(dir) {
+                Ok(_) => (),
+                Err(e) => println!("Failed to set current dir: {}", e),
+            }
         } else if command.starts_with("edit ") {
             let path = &command[5..];
+
+            if os == "linux" {
+                linux_editor
+                    .arg(path)
+                    .spawn()
+                    .expect("Failed to open editor");
+            } else if os == "windows" {
+                windows_editor
+                    .arg(path)
+                    .spawn()
+                    .expect("Failed to open editor");
+            } else {
+                bash(command);
+            }
 
             let mut editor = Command::new("notepad")
                 .arg(path)
                 .spawn()
-                .expect("Failed to open nano editor");
+                .expect("Failed to open editor");
 
             editor.wait().unwrap();
         } else {
             if os == "linux" {
-                exec_linux(command);
+                bash(command);
             } else if os == "windows" {
-                exec_windows(command);
+                cmd(command);
             } else {
-                exec_linux(command);
+                bash(command);
             }
         }
     }
