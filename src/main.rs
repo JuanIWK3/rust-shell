@@ -30,8 +30,8 @@ fn bash(mut command: &str) {
 }
 
 fn main() {
-    let os = env::consts::OS;
-    let info = os_info::get();
+    let os = env::consts::OS; // identify os
+    let info = os_info::get(); // get os info
 
     if os == "linux" {
         println!("Running on Linux");
@@ -42,25 +42,28 @@ fn main() {
     }
 
     loop {
-        let mut command = String::new();
+        // Wait for commands
+        let mut command = String::new(); // Variable that holds the command
 
-        print!("{}> ", env::current_dir().unwrap().display());
+        print!("{}> ", env::current_dir().unwrap().display()); // Print the current directory
 
-        let _ = io::stdout().flush();
+        let _ = io::stdout().flush(); // Input in the same line as output
+
         io::stdin()
             .read_line(&mut command)
-            .expect("failed to read line!");
+            .expect("failed to read command!"); // Read the command
 
-        let command = command.trim();
+        let command = command.trim(); // Remove white spaces from left and right
 
         if command == "exit" {
-            break;
+            break; // Exit the program
         } else if command == "ver" {
             println!("{}", info);
         }
 
         if command.starts_with("cd ") {
             let dir = &command[3..];
+
             match env::set_current_dir(dir) {
                 Ok(_) => (),
                 Err(e) => println!("Failed to set current dir: {}", e),
@@ -68,6 +71,7 @@ fn main() {
         } else if command.starts_with("edit ") {
             let mut linux_editor = Command::new("nano");
             let mut windows_editor = Command::new("notepad");
+
             let path = &command[5..];
 
             let lock_file = format!("{}.lock", path);
@@ -98,9 +102,7 @@ fn main() {
 
             fs::remove_file(&lock_file).expect("Failed to remove lock file")
         } else {
-            if os == "linux" {
-                bash(command);
-            } else if os == "windows" {
+            if os == "windows" {
                 cmd(command);
             } else {
                 bash(command);
